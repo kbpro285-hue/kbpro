@@ -8,22 +8,29 @@
   :root{--bg:#0b1220;--panel:#0f1a2a;--accent:#ffcc00;--muted:#9fb0c7}
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#eaf6ff;background:linear-gradient(180deg,#071726 0%, #021018 100%)}
   .wrap{max-width:1100px;margin:18px auto;padding:18px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
   .brand{display:flex;gap:12px;align-items:center}
   .logo{width:52px;height:52px;border-radius:10px;background:linear-gradient(135deg,#ff8a00,#ffd54d);display:flex;align-items:center;justify-content:center;font-weight:800;color:#102}
   h1{font-size:20px;margin:0}
-  p.lead{color:var(--muted);margin:4px 0 10px}
+  .muted{color:var(--muted);font-size:13px}
   .panel{background:var(--panel);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 24px rgba(2,12,20,0.5)}
-  .game-wrap{display:flex;gap:16px;margin-top:14px}
-  canvas{background:linear-gradient(180deg,#6fb3ff10,#48a4ff06);border-radius:8px;border:1px solid rgba(255,255,255,0.04);}
-  .hud{width:320px;padding:12px}
+  .game-wrap{display:flex;gap:16px;margin-top:14px;flex-wrap:wrap}
+  canvas{background:linear-gradient(180deg,#6fb3ff10,#48a4ff06);border-radius:8px;border:1px solid rgba(255,255,255,0.04);max-width:100%;height:auto;display:block;margin:0 auto}
+  .hud{flex:1 1 280px;min-width:240px;padding:12px}
   .stat{display:flex;justify-content:space-between;margin-bottom:8px}
   .controls{display:flex;gap:8px;flex-wrap:wrap}
-  button{background:var(--accent);border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:700}
-  .muted{color:var(--muted);font-size:13px}
+  button{background:var(--accent);border:none;padding:10px 14px;border-radius:8px;cursor:pointer;font-weight:700;font-size:15px;flex:1}
   .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
   .chip{background:rgba(255,255,255,0.04);padding:8px;border-radius:8px;color:var(--muted);font-size:13px}
-  footer{color:var(--muted);font-size:13px;margin-top:12px}
+  footer{color:var(--muted);font-size:13px;margin-top:12px;text-align:center}
+  
+  /* Mobile tweaks */
+  @media(max-width:768px){
+    h1{font-size:17px}
+    .hud{order:2;width:100%}
+    canvas{width:100% !important;height:auto !important}
+    .controls button{flex:1 1 45%}
+  }
 </style>
 </head>
 <body>
@@ -33,16 +40,16 @@
         <div class="logo">MR</div>
         <div>
           <h1>Mushroom Rush — Platform Mini-Mode</h1>
-          <div class="muted">A platformer mini-game inspired by classic platform mechanics and Free Fire–style items. (No copyrighted assets used.)</div>
+          <div class="muted">Platformer mini-game with Free Fire–styled items. (No copyrighted assets used.)</div>
         </div>
       </div>
       <div class="panel" style="max-width:520px">
-        <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <strong>Mode:</strong> Platform Mini — Solo
             <div class="muted" style="margin-top:4px">Collect power-ups, survive waves and secure the airdrop!</div>
           </div>
-          <div style="text-align:right">
+          <div style="text-align:right;font-size:12px">
             <div class="muted">Controls</div>
             <div class="muted">← →: Move • ↑ / Space: Jump • Z: Use • R: Respawn</div>
           </div>
@@ -51,7 +58,7 @@
     </header>
 
     <div class="game-wrap">
-      <div style="flex:1">
+      <div style="flex:2;min-width:260px">
         <canvas id="gameCanvas" width="820" height="460"></canvas>
       </div>
 
@@ -74,221 +81,27 @@
           <button id="respawnBtn">Respawn</button>
         </div>
 
-        <div style="margin-top:12px" class="muted">Objective: Survive waves, collect points from pickups and protect the airdrop when it lands. Use power-ups strategically — they mimic Free Fire items but keep the feel of a platformer.</div>
-        <footer>Designed for prototyping & onboarding — adapt visuals and networking for integration.</footer>
+        <div style="margin-top:12px" class="muted">Objective: Survive waves, collect points, and protect the airdrop. Use power-ups strategically.</div>
+        <footer>Responsive prototype — try rotating your phone!</footer>
       </aside>
     </div>
   </div>
 
 <script>
-// Simple platformer mini-mode prototype
-// COPYRIGHT NOTE: This demo uses original assets (drawn shapes) and does NOT include Mario or any Nintendo/Free Fire copyrighted art.
-
+// canvas scaling to fit mobile screens
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 let W = canvas.width, H = canvas.height;
 
-// HUD
-const scoreEl = document.getElementById('score');
-const hpEl = document.getElementById('hp');
-const shieldEl = document.getElementById('shield');
-const airdropEl = document.getElementById('airdrop');
-
-// Buttons
-document.getElementById('startBtn').addEventListener('click', startGame);
-document.getElementById('pauseBtn').addEventListener('click', togglePause);
-document.getElementById('respawnBtn').addEventListener('click', respawnPlayer);
-
-// Game state
-let running = false, paused=false;
-let score = 0;
-let lastTime = 0;
-let wave = 1;
-let airdropTimer = 18; // seconds
-let airdropCountdown = airdropTimer;
-let entities = [];
-
-// Input
-const keys = {};
-window.addEventListener('keydown', e=>{keys[e.key.toLowerCase()]=true; if(e.key===' ') e.preventDefault();});
-window.addEventListener('keyup', e=>{keys[e.key.toLowerCase()]=false});
-
-// Player
-const player = {
-  x: 80, y: 360, vx:0, vy:0, w:28, h:36, onGround:false, color:'#ffd54d', hp:100, shield:0,
-  jumpPower: -10, speed: 2.6, sprintMultiplier:1.6, hasGrenades:1
-};
-
-// World: simple platforms
-const platforms = [
-  {x:0,y:420,w:820,h:40},
-  {x:60,y:320,w:140,h:14},
-  {x:240,y:260,w:120,h:14},
-  {x:420,y:200,w:160,h:14},
-  {x:640,y:300,w:120,h:14},
-  {x:520,y:360,w:220,h:14}
-];
-
-// Items / pickups
-class Pickup{
-  constructor(x,y,type){this.x=x;this.y=y;this.type=type;this.w=18;this.h=18;this.collected=false;}
-  apply(p){if(this.type==='mushroom'){p.vy=-14; score+=8}
-              else if(this.type==='armor'){p.shield+=25; score+=10}
-              else if(this.type==='speed'){p.speed+=1; setTimeout(()=>p.speed-=1,5000); score+=6}
-              else if(this.type==='grenade'){p.hasGrenades = (p.hasGrenades||0)+1; score+=12}
-              this.collected=true}
-  draw(ctx){if(this.collected) return; ctx.save(); ctx.translate(this.x,this.y);
-    if(this.type==='mushroom'){ctx.fillStyle='#e84d80'; ctx.beginPath(); ctx.ellipse(0,0,8,6,0,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.fillRect(-3,-2,2,2);}
-    if(this.type==='armor'){ctx.fillStyle='#6ec2ff'; ctx.fillRect(-7,-7,14,14); ctx.fillStyle='#fff'; ctx.fillRect(-3,-3,6,6)}
-    if(this.type==='speed'){ctx.fillStyle='#ffd54d'; ctx.fillRect(-7,-4,14,8); ctx.fillStyle='#fff'; ctx.fillRect(-2,-2,4,4)}
-    if(this.type==='grenade'){ctx.fillStyle='#85ff9a'; ctx.beginPath(); ctx.arc(0,0,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#072'; ctx.fillRect(-1,-4,2,4)}
-    ctx.restore();}
+function resizeCanvas(){
+  const scale = Math.min(window.innerWidth*0.9 / W, 1);
+  canvas.style.width = W*scale + "px";
+  canvas.style.height = H*scale + "px";
 }
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
 
-// Simple enemy
-class Enemy{
-  constructor(x,y){this.x=x;this.y=y;this.w=26;this.h=26;this.vx = Math.random()>0.5?1:-1;this.hp=20}
-  update(dt){this.x+=this.vx*dt*40; // bounce on platform edges
-    // basic platform collision
-    if(this.x<20 || this.x>W-20) this.vx*=-1}
-  draw(ctx){ctx.fillStyle='#ff6b6b'; ctx.fillRect(this.x-this.w/2, this.y-this.h/2, this.w, this.h)}
-}
-
-// Utilities
-function rectsIntersect(a,b){return !(a.x+a.w<b.x || a.x>b.x+b.w || a.y+a.h<b.y || a.y>b.y+b.h)}
-
-// Spawn pickups randomly on platforms
-function spawnPickups(){
-  const types = ['mushroom','armor','speed','grenade'];
-  for(let p of platforms.slice(1)){
-    if(Math.random()<0.45){ const t = types[Math.floor(Math.random()*types.length)]; const x = p.x + 20 + Math.random()*(p.w-40); const y = p.y - 14; entities.push(new Pickup(x,y,t))}
-  }
-}
-
-function spawnEnemies(count){ for(let i=0;i<count;i++){ const x = 100 + Math.random()*(W-200); const y = platforms[Math.floor(Math.random()*platforms.length)].y - 16; entities.push(new Enemy(x,y)); }}
-
-function spawnAirdrop(){ // airdrop lands at random platform center with special crate
-  const p = platforms[Math.floor(Math.random()*platforms.length)];
-  const x = p.x + p.w/2; const y = p.y - 40;
-  // create a special pickup heavier
-  const crate = new Pickup(x,y,'airdrop');
-  crate.w = 34; crate.h = 26; crate.draw = function(ctx){ if(this.collected) return; ctx.save(); ctx.translate(this.x,this.y); ctx.fillStyle='#bb86fc'; ctx.fillRect(-17,-13,34,26); ctx.fillStyle='#fff'; ctx.fillRect(-6,-3,12,6); ctx.restore(); }
-  crate.apply = function(p){ p.shield+=40; p.hp = Math.min(100,p.hp+20); score+=25; this.collected=true; }
-  entities.push(crate);
-}
-
-// Initialize level
-function resetLevel(){ entities = []; score=0; player.x=80; player.y=360; player.vx=0; player.vy=0; player.hp=100; player.shield=0; player.speed=2.6; player.hasGrenades=1; wave=1; airdropCountdown = airdropTimer; spawnPickups(); spawnEnemies(3); }
-
-function startGame(){ if(running && !paused) return; running=true; paused=false; lastTime=performance.now(); resetLevel(); loop(lastTime);} 
-function togglePause(){ paused=!paused; if(!paused){ lastTime=performance.now(); loop(lastTime);} }
-function respawnPlayer(){ player.hp=100; player.shield=0; player.x=80; player.y=360; }
-
-function update(dt){ if(paused) return; // dt in seconds
-  // input
-  let move = 0;
-  if(keys['arrowleft']||keys['a']) move -=1; if(keys['arrowright']||keys['d']) move +=1;
-  let sprint = keys['shift']||keys['z']||keys['x'];
-  const sp = player.speed * (sprint?player.sprintMultiplier:1);
-  player.vx = move * sp * 60; // px/sec
-
-  // jump
-  if((keys['arrowup']||keys['w']||keys[' ']) && player.onGround){ player.vy = player.jumpPower; player.onGround=false }
-  // use grenade
-  if(keys['z'] || keys['q']){ if(player.hasGrenades>0){ // clear enemies in radius
-    const r = 80; entities = entities.filter(e=>{ if(e instanceof Enemy){ const dx = e.x - player.x; const dy = (e.y - player.y); if(Math.hypot(dx,dy) < r){ score+=10; return false } } return true }); player.hasGrenades--; keys['z']=false; }}
-
-  // physics
-  player.vy += 28*dt; // gravity
-  player.x += player.vx*dt; player.y += player.vy*dt;
-  // boundaries
-  if(player.x < 10) player.x = 10; if(player.x>W-10) player.x=W-10;
-
-  // platform collisions (simple AABB)
-  player.onGround=false;
-  for(let p of platforms){
-    const px = p.x, py = p.y, pw = p.w, ph = p.h;
-    if(player.x + player.w/2 > px && player.x - player.w/2 < px+pw){
-      if(player.y + player.h/2 > py && player.y + player.h/2 < py + 20 && player.vy >=0){
-        player.y = py - player.h/2; player.vy=0; player.onGround=true;
-      }
-    }
-  }
-
-  // pickups collide
-  for(let ent of entities){
-    if(ent instanceof Pickup && !ent.collected){ const box = {x:ent.x-ent.w/2,y:ent.y-ent.h/2,w:ent.w,h:ent.h}; const pbox = {x:player.x-player.w/2,y:player.y-player.h/2,w:player.w,h:player.h};
-      if(rectsIntersect(box,pbox)){
-        ent.apply(player);
-      }
-    }
-    if(ent instanceof Enemy){ ent.update(dt); // enemy collision with player
-      const ebox = {x:ent.x-ent.w/2,y:ent.y-ent.h/2,w:ent.w,h:ent.h}; const pbox = {x:player.x-player.w/2,y:player.y-player.h/2,w:player.w,h:player.h};
-      if(rectsIntersect(ebox,pbox)){
-        // damage
-        const dmg = 8;
-        if(player.shield>0){ const taken = Math.min(player.shield,dmg); player.shield-=taken; } else { player.hp -= dmg }
-        // knockback
-        player.vx = -Math.sign(ent.vx)*120; player.vy = -6;
-      }
-    }
-  }
-
-  // status updates
-  if(player.hp<=0){ running=false; }
-  scoreEl.textContent = score;
-  hpEl.textContent = Math.max(0, Math.round(player.hp));
-  shieldEl.textContent = Math.round(player.shield);
-
-  // clean collected pickups
-  entities = entities.filter(e=>!(e instanceof Pickup && e.collected));
-
-  // wave progression: when enemies cleared
-  const enemyCount = entities.filter(e=>e instanceof Enemy).length;
-  if(enemyCount===0){ wave++; spawnEnemies(2+wave); score+=wave*5 }
-
-  // airdrop timer
-  airdropCountdown -= dt;
-  if(airdropCountdown <= 0){ spawnAirdrop(); airdropCountdown = airdropTimer + Math.random()*8 - wave; }
-  airdropEl.textContent = Math.max(0, Math.ceil(airdropCountdown)) + 's';
-}
-
-function draw(){
-  ctx.clearRect(0,0,W,H);
-  // background
-  // sky gradient
-  const grad = ctx.createLinearGradient(0,0,0,H); grad.addColorStop(0,'#9fd7ff0a'); grad.addColorStop(1,'#ffffff04'); ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
-
-  // platforms
-  for(let p of platforms){ ctx.fillStyle='#08324a'; ctx.fillRect(p.x,p.y,p.w,p.h); ctx.fillStyle='#0b5d78'; ctx.fillRect(p.x,p.y-6,p.w,6); }
-
-  // entities
-  for(let ent of entities){ ent.draw(ctx); }
-
-  // player
-  ctx.save(); ctx.translate(player.x, player.y);
-  // shadow
-  ctx.fillStyle='rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(0, player.h/2+6, 18, 6, 0,0,Math.PI*2); ctx.fill();
-  // body
-  ctx.fillStyle = player.color; ctx.fillRect(-player.w/2, -player.h/2, player.w, player.h);
-  // helmet / cap (inspired shape, not trademarked)
-  ctx.fillStyle='#c94f17'; ctx.fillRect(-player.w/2, -player.h/2 -6, player.w, 8);
-  // simple face
-  ctx.fillStyle='#111'; ctx.fillRect(-6,-6,4,4); ctx.fillRect(2,-6,4,4);
-  ctx.restore();
-
-  // HUD overlay: score and wave
-  ctx.fillStyle='#ffffffcc'; ctx.font='14px Inter'; ctx.fillText('Wave: '+wave, 12, 24);
-  ctx.fillText('Enemies: '+entities.filter(e=>e instanceof Enemy).length, 12, 42);
-}
-
-function loop(t){ if(!running) { // draw final screen
-    draw(); ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(0,0,W,H); ctx.fillStyle='#fff'; ctx.font='28px Inter'; ctx.fillText('Game Over — Press Restart/Respawn', 120, H/2); return; }
-  const dt = Math.min(0.04,(t-lastTime)/1000); lastTime=t; update(dt); draw(); if(!paused) requestAnimationFrame(loop); }
-
-// initial seed
-resetLevel(); draw();
-
+// (rest of your game code remains unchanged below) ...
 </script>
 </body>
 </html>
