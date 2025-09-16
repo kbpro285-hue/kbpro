@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Mushroom Rush — Platform Mini-Mode (Free Fire–styled)</title>
+<title>Mushroom Rush — Platform Mini-Mode</title>
 <style>
   :root{--bg:#0b1220;--panel:#0f1a2a;--accent:#ffcc00;--muted:#9fb0c7}
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;color:#eaf6ff;background:linear-gradient(180deg,#071726 0%, #021018 100%)}
@@ -31,6 +31,49 @@
     canvas{width:100% !important;height:auto !important}
     .controls button{flex:1 1 45%}
   }
+
+  /* Mobile on-screen controls */
+  .mobile-controls {
+    display:none;
+    position:fixed;
+    bottom:20px;
+    left:0;
+    right:0;
+    width:100%;
+    padding:10px;
+    box-sizing:border-box;
+    z-index:1000;
+    justify-content:space-between;
+    align-items:flex-end;
+    pointer-events:none;
+  }
+  .mobile-controls button {
+    pointer-events:auto;
+    background:var(--accent);
+    border:none;
+    padding:18px 20px;
+    margin:4px;
+    border-radius:12px;
+    font-size:18px;
+    font-weight:700;
+    min-width:60px;
+    min-height:60px;
+  }
+  .dpad {
+    display:flex;
+    flex:1;
+    justify-content:flex-start;
+    gap:8px;
+  }
+  .actions {
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    align-items:flex-end;
+  }
+  @media(max-width:768px){
+    .mobile-controls{display:flex;}
+  }
 </style>
 </head>
 <body>
@@ -40,7 +83,7 @@
         <div class="logo">MR</div>
         <div>
           <h1>Mushroom Rush — Platform Mini-Mode</h1>
-          <div class="muted">Platformer mini-game with Free Fire–styled items. (No copyrighted assets used.)</div>
+          <div class="muted">Platformer mini-game with Free Fire–styled items (original assets only).</div>
         </div>
       </div>
       <div class="panel" style="max-width:520px">
@@ -82,26 +125,76 @@
         </div>
 
         <div style="margin-top:12px" class="muted">Objective: Survive waves, collect points, and protect the airdrop. Use power-ups strategically.</div>
-        <footer>Responsive prototype — try rotating your phone!</footer>
+        <footer>Responsive prototype — try on mobile!</footer>
       </aside>
     </div>
   </div>
 
+  <!-- Mobile On-Screen Controls -->
+  <div class="mobile-controls">
+    <div class="dpad">
+      <button data-key="arrowleft">←</button>
+      <button data-key="arrowup">↑</button>
+      <button data-key="arrowright">→</button>
+    </div>
+    <div class="actions">
+      <button data-key="z">Grenade</button>
+      <button data-key="r">Respawn</button>
+    </div>
+  </div>
+
 <script>
-// canvas scaling to fit mobile screens
+// --- GAME CORE (same as your original, shortened for clarity) ---
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-let W = canvas.width, H = canvas.height;
 
+// Fixed resolution
+const W = 820, H = 460;
+canvas.width = W;
+canvas.height = H;
+
+// Responsive scaling
 function resizeCanvas(){
-  const scale = Math.min(window.innerWidth*0.9 / W, 1);
-  canvas.style.width = W*scale + "px";
-  canvas.style.height = H*scale + "px";
+  let maxWidth = window.innerWidth * 0.95;
+  let scale = Math.min(maxWidth / W, 1);
+  canvas.style.width = W * scale + "px";
+  canvas.style.height = H * scale + "px";
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// (rest of your game code remains unchanged below) ...
+// HUD
+const scoreEl = document.getElementById('score');
+const hpEl = document.getElementById('hp');
+const shieldEl = document.getElementById('shield');
+const airdropEl = document.getElementById('airdrop');
+
+// Input
+const keys = {};
+window.addEventListener('keydown', e=>{keys[e.key.toLowerCase()]=true; if(e.key===' ') e.preventDefault();});
+window.addEventListener('keyup', e=>{keys[e.key.toLowerCase()]=false});
+
+// Buttons
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.getElementById('pauseBtn').addEventListener('click', togglePause);
+document.getElementById('respawnBtn').addEventListener('click', respawnPlayer);
+
+// --- Mobile Controls Mapping ---
+document.querySelectorAll(".mobile-controls button").forEach(btn=>{
+  const key = btn.dataset.key;
+  btn.addEventListener("touchstart", e=>{
+    e.preventDefault();
+    keys[key] = true;
+  });
+  btn.addEventListener("touchend", e=>{
+    e.preventDefault();
+    keys[key] = false;
+  });
+});
+
+// --------- Your full game logic continues here (entities, update, draw, loop, etc.) ---------
+// (Use the same game code you pasted earlier: player, platforms, pickups, enemies, update(), draw(), loop(), etc.)
 </script>
 </body>
 </html>
